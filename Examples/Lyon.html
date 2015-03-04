@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version (or Chrome Frame if pre-IE11). -->
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Lyon buildings demo</title>
+  <script src="../../cesium/Cesium.js"></script>
+  <script src="../Source/WfsGeometry.js"></script>
+  <script src="../Source/TileProvider.js"></script>
+  <style>
+      @import url(../../cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <script>
+    var texture_dir = "../../w/textures/"
+    var west = 4.84;
+    var south = 45.75;
+    var east = 4.86;
+    var north = 45.76;
+    var DEGREES_PER_RADIAN = 180.0 / Math.PI;
+    var RADIAN_PER_DEGREEE = 1 / DEGREES_PER_RADIAN;
+
+
+    var defaultCrsFunction = function(coordinates) {
+        return Cartesian3.fromDegrees(coordinates[0], coordinates[1], coordinates[2]);
+    }
+
+
+
+    var viewer = new Cesium.Viewer('cesiumContainer');
+
+    //viewer.dataSources.add(Cesium.GeoJsonDataSource.fromUrl('http://localhost/cgi-bin/tinyows?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetFeature&outputFormat=JSON&typeName=tows:textured_citygml&srsName=EPSG:4326&BBOX=4.77891738954122,45.7097114184435,4.92619849285373,45.8081159508728'));
+    //viewer.dataSources.add(Cesium.GeoJsonDataSource.fromUrl('http://localhost/cgi-bin/tinyows?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetFeature&outputFormat=JSON&typeName=tows:textured_citygml&featureID=tows:textured_citygml.2&srsName=EPSG:4326'));
+
+    var rectangle = Cesium.Rectangle.fromDegrees(west, south-0.01, east, north);
+    viewer.camera.viewRectangle(rectangle);
+
+    var scene = viewer.scene;
+
+    var primitives = scene.primitives;
+
+    /*
+    var primCol = new Cesium.PrimitiveCollection();
+
+    var a = Cesium.Cartesian3.fromDegrees(4,45,500);
+    var b = Cesium.Cartesian3.fromDegrees(4,46,500);
+    var c = Cesium.Cartesian3.fromDegrees(5,46,500);
+    var d = Cesium.Cartesian3.fromDegrees(5,45,500);
+    var pgeom = new Cesium.PolygonGeometry( {
+        polygonHierarchy : new Cesium.PolygonHierarchy([a, b, c]), 
+        perPositionHeight : true,
+        //vertexFormat : new Cesium.VertexFormat({st : true, normal : true })
+    } );
+
+    var url = "http://localhost/cgi-bin/tinyows?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetFeature&outputFormat=JSON&typeName=tows:textured_citygml_lat_long&BBOX="+west+","+south+","+east+","+north;
+    Cesium.when(Cesium.loadJson(url), function(geoJson) {
+        var texRe = /\((.*),"(.*)"\)/;
+
+        for (var f=0; f < geoJson.features.length; f++){
+            var texP = texRe.exec(geoJson.features[f].properties.tex);
+            var st = JSON.parse(texP[2].replace("{","[","g").replace("}","]","g"));
+            var geom = new TinGeometry({
+                  position: geoJson.features[f].geometry.coordinates,//[[[a.x, a.y, a.z],[b.x,b.y,b.z],[c.x,c.y,c.z],[a.x, a.y, a.z]]],
+                  //position: [[[[west,south,500],[east,south,500],[east,north,500],[west,south,500]]],[[[west,south,500],[east,north,500],[west,north,500],[west,south,500]]]],
+                  st : st//[[0,0],[1,0],[1,1],[0,0],[0,0],[1,1],[0,1],[0,0]]
+                  });
+            console.debug("Tin geom", geom);
+
+            var mat = new Cesium.Material({
+                    fabric : {
+                        type : 'DiffuseMap',
+                        uniforms : {
+                            image : texP[1]
+                        }
+                    }
+                });
+            primCol.add(new Cesium.Primitive({
+                  geometryInstances : new Cesium.GeometryInstance({ geometry : geom }) ,
+                  appearance : new Cesium.MaterialAppearance({
+                      material : mat,//Cesium.Material.fromType('Color'),
+                      //color : Cesium.Color.fromBytes(255, 0, 0, 255),
+                      faceForward : true
+                    })
+              }));
+        }
+
+        primitives.add( primCol );
+    })
+        */
+    //primitives.add(new Cesium.QuadtreePrimitive({
+    //    tileProvider : new TileProvider()
+    //}));
+    var url = "http://localhost/cgi-bin/tinyows?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetFeature&outputFormat=JSON&typeName=tows:textured_citygml_lat_long&FeatureId=tows:textured_citygml_lat_long.1";
+    var worker = new Worker('../Source/createWfsGeometry.js');
+    worker.onmessage = function(e) {console.log('recieved from worker: ', e.data);};
+    Cesium.when(Cesium.loadText(url), function(geoJson){
+            console.log("here", geoJson);
+            worker.postMessage();
+            });
+
+
+    var primCol = new Cesium.PrimitiveCollection();
+    var geom = new WfsGeometry({
+          position: [[[[west,south,500],[east,south,500],[east,north,500],[west,south,500]]],[[[west,south,500],[east,north,500],[west,north,500],[west,south,500]]]],
+          st : [[0,0],[1,0],[1,1],[0,0],[0,0],[1,1],[0,1],[0,0]]
+          });
+    primCol.add(new Cesium.Primitive({
+          geometryInstances : new Cesium.GeometryInstance({ 
+              geometry : geom,
+          }) ,
+          appearance : new Cesium.MaterialAppearance({
+              color : Cesium.Color.fromBytes(255, 0, 0, 255),
+              faceForward : true
+            }),
+          asynchronous : false
+      }));
+    primitives.add( primCol );
+
+    //var module;
+    //require(['createWfsGeometry.js'], function(f) {
+    //    console.log('here', f)
+    //    module = f;
+    //});
+    //console.log("getModule", module)
+
+    var globe = scene.globe;
+    scene.fxaa = true;
+    //globe.depthTestAgainstTerrain = true;
+
+    //var cesiumTerrainProviderMeshes = new Cesium.CesiumTerrainProvider({
+    //    url : '//cesiumjs.org/stk-terrain/tilesets/world/tiles'
+    //});
+
+    //viewer.terrainProvider = cesiumTerrainProviderMeshes;
+  </script>
+</body>
+</html>
