@@ -70,6 +70,7 @@ var WfsGeometry = function(options) {
     this._positions = [];
     if ( options.position.length && options.position[0].length ){
         for (i = 0; i < options.position.length; i++){
+            console.log(options.position[i][0]);
             for (j = 0; j < 3; j++){
                 var p = Cesium.Cartesian3.fromDegrees( 
                         options.position[i][0][j][0], 
