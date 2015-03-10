@@ -96,6 +96,14 @@ if(1){
     /*
     var worker = new Worker('../Source/createWfsGeometry.js');
     worker.onmessage = function(e){
+        console.log('from worker: ', e.data);
+    }
+    worker.postMessage(url)
+    */
+
+    /*
+    var worker = new Worker('../Source/createWfsGeometry.js');
+    worker.onmessage = function(e){
         if (e.data === 'done'){
             console.log('worker is done');
         }
@@ -145,12 +153,6 @@ if(1){
     worker.postMessage(url)
     */
 
-
-    var DEGREES_PER_RADIAN = 180.0 / Math.PI;
-    var RADIAN_PER_DEGREEE = 1 / DEGREES_PER_RADIAN;
-    var a = [4.84, 45.74, 4.86, 45.76];
-    for (var i=0; i<4; i++) a[i] *= RADIAN_PER_DEGREEE;
-    console.log(a);
     /*
     var primCol = new Cesium.PrimitiveCollection();
     var geom = new WfsGeometry({
@@ -169,8 +171,6 @@ if(1){
       }));
     viewer.scene.primitives.add( primCol );
     */
-
-    console.log(extent);
 
     //viewer.scene.primitives.add(
     //  new Cesium.Primitive({
@@ -194,16 +194,14 @@ if(1){
     //});
     //viewer.terrainProvider = cesiumTerrainProviderMeshes;
 
+    // Tiler
     viewer.scene.primitives.add(new Cesium.QuadtreePrimitive({
         tileProvider : new WfsTileProvider(
                            'http://localhost/cgi-bin/tinyows', 
-                           'tows:textured_citygml_lat_long', 10, 100000)
+                           'tows:textured_citygml_lat_long', 
+                           'http://localhost/w/textures',
+                           10, 100000)
     }));
-
-    console.log(Cesium.Cartesian3.fromDegrees(4.84, 45.74, 50));
-    console.log(Cesium.Cartesian3.fromDegrees(4.86, 45.74, 50));
-    console.log(Cesium.Cartesian3.fromDegrees(4.86, 45.76, 50));
-    console.log(Cesium.Cartesian3.fromDegrees(4.84, 45.76, 50));
 
     // antialiasing please
     viewer.scene.fxaa = true;

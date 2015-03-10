@@ -18,6 +18,7 @@ function geometryFromArrays(data){
         componentsPerAttribute : 3,
         values : data.normal
     });
+    /*
     attributes.tangent = new Cesium.GeometryAttribute({
         componentDatatype : Cesium.ComponentDatatype.FLOAT,
         componentsPerAttribute : 3,
@@ -28,6 +29,7 @@ function geometryFromArrays(data){
         componentsPerAttribute : 3,
         values : data.normal
     });
+    */
     
     var center = new Cesium.Cartesian3(data.center[0], data.center[1], data.center[2]);
     return new Cesium.Geometry({
@@ -38,16 +40,18 @@ function geometryFromArrays(data){
     });
 }
 
-function WfsTileProvider(url, layerName, minSizeMeters, maxSizeMeters) {
+function WfsTileProvider(url, layerName, textureBaseUrl, minSizeMeters, maxSizeMeters) {
     this._quadtree = undefined;
     this._tilingScheme = new Cesium.GeographicTilingScheme();
     this._errorEvent = new Cesium.Event();
     this._levelZeroMaximumError = Cesium.QuadtreeTileProvider.computeDefaultLevelZeroMaximumGeometricError(this._tilingScheme);
 
     this._workQueue = new WorkQueue('../Source/createWfsGeometry.js');
-    this._url = url
-    this._minSizeMeters = minSizeMeters
-    this._maxSizeMeters = maxSizeMeters
+    this._url = url;
+    this._textureBaseUrl = textureBaseUrl;
+    this._layerName = layerName;
+    this._minSizeMeters = minSizeMeters;
+    this._maxSizeMeters = maxSizeMeters;
 };
 
 Object.defineProperties(WfsTileProvider.prototype, {
@@ -145,12 +149,21 @@ WfsTileProvider.prototype.loadTile = function(context, frameState, tile) {
             this._workQueue.addTask(request, 
                     function(w){
                         if (w.data != 'done'){
+                            var mat = new Cesium.Material({
+                                fabric : {
+                                    type : 'DiffuseMap',
+                                    uniforms : {
+                                        image : that._textureBaseUrl+'/'+w.data.texture
+                                        //color : '#FFFFFF'
+                                    }
+                                }
+                            });
                             primCol.add(new Cesium.Primitive({
                                 geometryInstances: new Cesium.GeometryInstance({
                                     geometry: geometryFromArrays(w.data)
                                 }),
                                 appearance : new Cesium.MaterialAppearance({
-                                    color : Cesium.Color.fromBytes(255, 0, 0, 255),
+                                    material : mat,
                                     faceForward : true
                                   }),
                                 asynchronous : false
